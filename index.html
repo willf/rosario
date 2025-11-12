@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #prayer-text-container {
+        /* 10rem = h-40 */
+        /* Calculate height: 100vh - header - footer - padding */
+        /* This is a rough estimate, adjust as needed */
+        max-height: calc(100vh - 10rem - 12rem - 4rem);
+        /* Fallback for smaller screens */
+        height: 30vh;
+      }
+
+      @media (min-width: 640px) {
+        #prayer-text-container {
+          /* Larger fixed height for desktop */
+          height: 400px;
+        }
+      }
+
+      /* Custom scrollbar for a cleaner look */
+      #prayer-text-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      #prayer-text-container::-webkit-scrollbar-track {
+        background: #f1f5f9; /* gray-100 */
+        border-radius: 10px;
+      }
+      #prayer-text-container::-webkit-scrollbar-thumb {
+        background: #94a3b8; /* gray-400 */
+        border-radius: 10px;
+      }
+      #prayer-text-container::-webkit-scrollbar-thumb:hover {
+        background: #64748b; /* gray-500 */
+      }
+
+      /* Glassmorphism effect for header/footer */
+      .glass-header {
+        background-color: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+      }
+
+      .glass-footer {
+        background-color: rgba(248, 250, 252, 0.7); /* gray-50 with alpha */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(226, 232, 240, 0.5); /* gray-200 with alpha */
+      }
+
+      /* Ensure responsive buttons */
+      footer button {
+        min-width: 120px; /* Give buttons a consistent min-width */
+      }
+
+      /* Custom range slider */
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        background: #cbd5e1; /* gray-300 */
+        border-radius: 5px;
+        outline: none;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      input[type="range"]:hover {
+        opacity: 1;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #2563eb; /* blue-600 */
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #2563eb; /* blue-600 */
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Message Box */
+      #message-box {
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+      }
+
+      /* Prayer count badge */
+      #prayer-count {
+        min-width: 40px;
+        padding: 2px 8px;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        background-color: #e2e8f0;
+        color: #334155;
+        border-radius: 10px;
+      }
+
+      /* Ensure icons are sized correctly */
+      .control-icon {
+        width: 1.5rem; /* 24px */
+        height: 1.5rem; /* 24px */
+        margin-right: 0.5rem; /* 8px */
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-100 text-gray-800 min-h-screen p-4 sm:p-8 flex items-center justify-center"
+  >
+    <div
+      class="w-full max-w-3xl bg-white shadow-2xl rounded-2xl overflow-hidden"
+    >
+      <!-- Header -->
+      <header class="p-6 border-b border-gray-200 relative">
+        <h1
+          id="header-title"
+          class="text-3xl font-bold text-center text-blue-800"
+        >
+          Pray the Rosary
+        </h1>
+        <p class="text-center text-gray-600 mt-2">
+          <span id="mystery-day-label" class="font-semibold"
+            >Mystery of the Day:</span
+          >
+          <span id="mystery-day-text"></span>
+        </p>
+        <button
+          id="lang-toggle"
+          class="absolute top-6 right-6 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-200"
+        >
+          Español
+        </button>
+      </header>
+
+      <!-- Main Content (Prayer Text) -->
+      <main class="p-6 sm:p-8">
+        <div
+          id="prayer-text-container"
+          class="overflow-y-auto p-4 bg-gray-50 rounded-lg shadow-inner"
+        >
+          <h2
+            id="prayer-title"
+            class="text-2xl font-bold text-gray-900 mb-4 text-center"
+          >
+            Welcome
+          </h2>
+          <div
+            id="prayer-text"
+            class="text-lg sm:text-xl text-gray-700 leading-relaxed whitespace-pre-wrap text-center"
+          >
+            Press "Play" to begin the Rosary with automatic scrolling, or use
+            Next/Previous to move at your own pace.
+          </div>
+        </div>
+        <!-- Prayer Counter -->
+        <div class="flex justify-center mt-4">
+          <span id="prayer-count" class="hidden"></span>
+        </div>
+      </main>
+
+      <!-- Controls -->
+      <footer class="bg-gray-100 p-6 border-t border-gray-200">
+        <div
+          class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 flex-wrap"
+        >
+          <!-- Previous Button -->
+          <button
+            id="prev-btn"
+            class="w-full sm:w-auto flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200 disabled:opacity-50"
+            disabled
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+            <span id="prev-text">Previous</span>
+          </button>
+
+          <!-- Play/Pause Button -->
+          <button
+            id="play-pause-btn"
+            class="w-full sm:w-auto flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200 disabled:opacity-50"
+            disabled
+          >
+            <!-- Play Icon -->
+            <svg
+              id="play-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <!-- Pause Icon -->
+            <svg
+              id="pause-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon hidden"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span id="play-pause-text">Play</span>
+          </button>
+
+          <!-- Next Button -->
+          <button
+            id="next-btn"
+            class="w-full sm:w-auto flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200 disabled:opacity-50"
+            disabled
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 5l7 7-7 7M5 5l7 7-7 7"
+              />
+            </svg>
+            <span id="next-text">Next</span>
+          </button>
+
+          <!-- Reset Button -->
+          <button
+            id="reset-btn"
+            class="w-full sm:w-auto flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9H4V4m.582 5H20a8 8 0 01-15.418 5"
+              ></path>
+            </svg>
+            <span id="reset-text">Reset</span>
+          </button>
+
+          <!-- TTS Toggle Button -->
+          <button
+            id="tts-toggle-btn"
+            class="w-full sm:w-auto flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200"
+          >
+            <!-- Speaker Off -->
+            <svg
+              id="tts-icon-off"
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                clip-rule="evenodd"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+              />
+            </svg>
+            <!-- Speaker On -->
+            <svg
+              id="tts-icon-on"
+              xmlns="http://www.w3.org/2000/svg"
+              class="control-icon hidden"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.536 8.464a5 5 0 010 7.072M17.657 6.343a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+              />
+            </svg>
+            <span id="tts-text">TTS Off</span>
+          </button>
+        </div>
+        <!-- Speech Speed Control -->
+        <div class="flex items-center space-x-2 w-full max-w-xs mx-auto mt-4">
+          <label
+            for="speech-speed"
+            class="text-sm font-medium text-gray-700"
+            id="speech-speed-label"
+            >Speed:</label
+          >
+          <input
+            type="range"
+            id="speech-speed"
+            min="0.5"
+            max="2"
+            step="0.1"
+            value="0.8"
+            class="w-full"
+          />
+          <span
+            id="speech-speed-value"
+            class="text-sm font-medium text-gray-700 w-10 text-right"
+            >0.8x</span
+          >
+        </div>
+      </footer>
+    </div>
+
+    <script type="module">
+      // --- DATA: PRAYERS ---
+
+      const PRAYERS = {
+        en: {
+          // UI Text
+          headerTitle: "Pray the Rosary",
+          mysteryDayLabel: "Mystery of the Day:",
+          playBtn: "Play",
+          pauseBtn: "Pause",
+          resetBtn: "Reset",
+          prevBtn: "Previous",
+          nextBtn: "Next",
+          welcomeTitle: "Welcome",
+          welcomeText:
+            'Press "Play" to begin the Rosary with automatic scrolling, or use Next/Previous to move at your own pace.',
+          langBtn: "Español",
+          ttsBtnOn: "TTS On",
+          ttsBtnOff: "TTS Off",
+          speedLabel: "Speed:",
+          // Prayers
+          signOfCrossTitle: "Sign of the Cross",
+          signOfCross:
+            "In the name of the Father, and of the Son, and of the Holy Spirit. Amen.",
+          apostlesCreedTitle: "Apostles' Creed",
+          apostlesCreed:
+            "I believe in God, the Father Almighty, Creator of Heaven and earth; and in Jesus Christ, His only Son, Our Lord, Who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died, and was buried. He descended into Hell; the third day He rose again from the dead; He ascended into Heaven, and sits at the right hand of God, the Father Almighty; from thence He shall come to judge the living and the dead. I believe in the Holy Spirit, the holy Catholic Church, the communion of saints, the forgiveness of sins, the resurrection of the body, and life everlasting. Amen.",
+          ourFatherTitle: "Our Father (Intro)",
+          ourFather:
+            "Our Father, Who art in Heaven, hallowed be Thy name; Thy kingdom come; Thy will be done on earth as it is in Heaven. Give us this day our daily bread; and forgive us our trespasses as we forgive those who trespass against us; and lead us not into temptation, but deliver us from evil. Amen.",
+          hailMaryTitle: "Hail Mary (Intro)",
+          hailMary:
+            "Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.",
+          gloryBeTitle: "Glory Be (Intro)",
+          gloryBe:
+            "Glory be to the Father, and to the Son, and to the Holy Spirit. As it was in the beginning, is now, and ever shall be, world without end. Amen.",
+          fatimaPrayerTitle: "Fatima Prayer (O My Jesus)",
+          fatimaPrayer:
+            "O my Jesus, forgive us our sins, save us from the fires of Hell, lead all souls to Heaven, especially those in most need of Thy mercy. Amen.",
+          mysteryAnnouncementTitle: "Mystery Announcement", // Placeholder title
+          ourFatherMysteryTitle: "Our Father",
+          hailMaryMysteryTitle: "Hail Mary",
+          gloryBeMysteryTitle: "Glory Be",
+          hailHolyQueenTitle: "Hail Holy Queen",
+          hailHolyQueen:
+            "Hail, Holy Queen, Mother of Mercy, our life, our sweetness and our hope! To thee do we cry, poor banished children of Eve; to thee do we send up our sighs, mourning and weeping in this valley of tears. Turn then, most gracious Advocate, thine eyes of mercy toward us, and after this our exile, show unto us the blessed fruit of thy womb, Jesus. O clement, O loving, O sweet Virgin Mary! \n\nV. Pray for us, O Holy Mother of God. \nR. That we may be made worthy of the promises of Christ.",
+          rosaryPrayerTitle: "Concluding Rosary Prayer",
+          rosaryPrayer:
+            "O God, Whose only-begotten Son, by His life, death, and resurrection, has purchased for us the rewards of eternal life; grant, we beseech Thee, that, meditating upon these mysteries of the Most Holy Rosary of the Blessed Virgin Mary, we may imitate what they contain and obtain what they promise. Through the same Christ Our Lord. Amen.",
+          endTitle: "End",
+          endText:
+            "The Rosary is complete. In the name of the Father, and of the Son, and of the Holy Spirit. Amen.",
+        },
+        es: {
+          // UI Text
+          headerTitle: "Reza el Rosario",
+          mysteryDayLabel: "Misterio del Día:",
+          playBtn: "Reproducir",
+          pauseBtn: "Pausar",
+          resetBtn: "Reiniciar",
+          prevBtn: "Anterior",
+          nextBtn: "Siguiente",
+          welcomeTitle: "Bienvenido",
+          welcomeText:
+            'Presione "Reproducir" para comenzar el Rosario con desplazamiento automático, or use Siguiente/Anterior para moverse a su propio ritmo.',
+          langBtn: "English",
+          ttsBtnOn: "TTS On",
+          ttsBtnOff: "TTS Off",
+          speedLabel: "Velocidad:",
+          // Prayers
+          signOfCrossTitle: "Señal de la Cruz",
+          signOfCross:
+            "En el nombre del Padre, y del Hijo, y del Espíritu Santo. Amén.",
+          apostlesCreedTitle: "Credo de los Apóstoles",
+          apostlesCreed:
+            "Creo en Dios, Padre todopoderoso, Creador del cielo y de la tierra. Creo en Jesucristo, su único Hijo, nuestro Señor, que fue concebido por obra y gracia del Espíritu Santo, nació de santa María Virgen, padeció bajo el poder de Poncio Pilato, fue crucificado, muerto y sepultado, descendió a los infiernos, al tercer día resucitó de entre los muertos, subió a los cielos y está sentado a la derecha de Dios, Padre todopoderoso. Desde allí ha de venir a juzgar a vivos y muertos. Creo en el Espíritu Santo, la santa Iglesia católica, la comunión de los santos, el perdón de los pecados, la resurrección de la carne y la vida eterna. Amén.",
+          ourFatherTitle: "Padre Nuestro (Intro)",
+          ourFather:
+            "Padre nuestro, que estás en el cielo, santificado sea tu Nombre; venga a nosotros tu reino; hágase tu voluntad en la tierra como en el cielo. Danos hoy nuestro pan de cada día; perdona nuestras ofensas, como también nosotros perdonamos a los que nos ofenden; no nos dejes caer en la tentación, y líbranos del mal. Amén.",
+          hailMaryTitle: "Ave María (Intro)",
+          hailMary:
+            "Dios te salve, María, llena eres de gracia, el Señor es contigo. Bendita tú eres entre todas las mujeres, y bendito es el fruto of de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte. Amén.",
+          gloryBeTitle: "Gloria (Intro)",
+          gloryBe:
+            "Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos. Amén.",
+          fatimaPrayerTitle: "Oración de Fátima (Oh Jesús Mío)",
+          fatimaPrayer:
+            "Oh Jesús mío, perdona nuestros pecados, líbranos del fuego del infierno, lleva al cielo a todas las almas, especialmente a las más necesitadas de tu misericordia. Amén.",
+          mysteryAnnouncementTitle: "Anuncio de Misterio", // Placeholder title
+          ourFatherMysteryTitle: "Padre Nuestro",
+          hailMaryMysteryTitle: "Ave María",
+          gloryBeMysteryTitle: "Gloria",
+          hailHolyQueenTitle: "Salve Reina",
+          hailHolyQueen:
+            "Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra. Dios te salve. A Ti clamamos los desterrados hijos de Eva; a Ti suspiramos, gimiendo y llorando, en este valle de lágrimas. Ea, pues, Señora, abogada nuestra, vuelve a nosotros esos tus ojos misericordiosos; y después de este destierro, muéstranos a Jesús, fruto bendito de tu vientre. ¡Oh clementísima, oh piadosa, oh dulce siempre Virgen María! \n\nV. Ruega por nosotros, Santa Madre de Dios. \nR. Para que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo.",
+          rosaryPrayerTitle: "Oración Final del Rosario",
+          rosaryPrayer:
+            "Oh Dios, cuyo unigénito Hijo, con su vida, muerte y resurrección, nos alcanzó el premio de la vida eterna; concédenos, te rogamos, que meditando estos misterios en el Santísimo Rosario de la bienaventurada Virgen María, imitemos lo que contienen y alcancemos lo que prometen. Por el mismo Cristo nuestro Señor. Amén.",
+          endTitle: "Fin",
+          endText:
+            "El Rosario está completo. En el nombre del Padre, y del Hijo, y del Espíritu Santo. Amén.",
+        },
+      };
+
+      const MYSTERIES = {
+        en: {
+          Joyful: [
+            "The Annunciation",
+            "The Visitation",
+            "The Nativity",
+            "The Presentation",
+            "The Finding in the Temple",
+          ],
+          Sorrowful: [
+            "The Agony in the Garden",
+            "The Scourging at the Pillar",
+            "The Crowning with Thorns",
+            "The Carrying of the Cross",
+            "The Crucifixion",
+          ],
+          Glorious: [
+            "The Resurrection",
+            "The Ascension",
+            "The Descent of the Holy Spirit",
+            "The Assumption",
+            "The Coronation of Mary",
+          ],
+          Luminous: [
+            "The Baptism of Jesus in the Jordan",
+            "The Wedding at Cana",
+            "The Proclamation of the Kingdom",
+            "The Transfiguration",
+            "The Institution of the Eucharist",
+          ],
+        },
+        es: {
+          Joyful: [
+            "La Anunciación",
+            "La Visitación",
+            "El Nacimiento de Jesús",
+            "La Presentación",
+            "El Niño Perdido y Hallado en el Templo",
+          ],
+          Sorrowful: [
+            "La Oración en el Huerto",
+            "La Flagelación del Señor",
+            "La Coronación de Espinas",
+            "Jesús con la Cruz a Cuestas",
+            "La Crucifixión y Muerte de Nuestro Señor",
+          ],
+          Glorious: [
+            "La Resurrección",
+            "La Ascensión",
+            "La Venida del Espíritu Santo",
+            "La Asunción de María",
+            "La Coronación de María",
+          ],
+          Luminous: [
+            "El Bautismo de Jesús en el Jordán",
+            "Las Bodas de Caná",
+            "El Anuncio del Reino de Dios",
+            "La Transfiguración",
+            "La Institución de la Eucaristía",
+          ],
+        },
+      };
+
+      // --- DOM ELEMENTS ---
+      let prayerTextContainer, prayerTitleEl, prayerTextEl, prayerCountEl;
+      let langToggleBtn, playPauseBtn, playIcon, pauseIcon, playPauseText;
+      let prevBtn,
+        nextBtn,
+        resetBtn,
+        headerTitleEl,
+        mysteryDayLabelEl,
+        mysteryDayTextEl;
+      let prevTextEl, nextTextEl, resetTextEl;
+
+      // TTS Elements
+      let ttsToggleBtn, ttsIconOn, ttsIconOff, ttsTextEl;
+      let speechSpeedSlider, speechSpeedLabel, speechSpeedValue;
+
+      // --- STATE ---
+      let currentLang = "es";
+      let prayerSteps = [];
+      let currentStepIndex = 0;
+      let isPlaying = false;
+      let scrollTimer = null;
+      let autoAdvanceTimer = null;
+      const SCROLL_SPEED = 1; // Pixels per interval
+      const SCROLL_INTERVAL = 50; // Milliseconds
+      const AUTO_ADVANCE_DELAY = 3000; // 3 seconds after scroll ends
+
+      // TTS State
+      let isTtsEnabled = true;
+      let speechSpeed = 0.8;
+      let currentUtterance = null;
+      const synth = window.speechSynthesis;
+
+      // --- FUNCTIONS ---
+
+      // --- INITIALIZATION ---
+
+      function initApp() {
+        // Cache DOM elements
+        prayerTextContainer = document.getElementById("prayer-text-container");
+        prayerTitleEl = document.getElementById("prayer-title");
+        prayerTextEl = document.getElementById("prayer-text");
+        prayerCountEl = document.getElementById("prayer-count");
+
+        langToggleBtn = document.getElementById("lang-toggle");
+        playPauseBtn = document.getElementById("play-pause-btn");
+        playIcon = document.getElementById("play-icon");
+        pauseIcon = document.getElementById("pause-icon");
+        playPauseText = document.getElementById("play-pause-text");
+
+        prevBtn = document.getElementById("prev-btn");
+        nextBtn = document.getElementById("next-btn");
+        resetBtn = document.getElementById("reset-btn");
+
+        prevTextEl = document.getElementById("prev-text");
+        nextTextEl = document.getElementById("next-text");
+        resetTextEl = document.getElementById("reset-text");
+
+        headerTitleEl = document.getElementById("header-title");
+        mysteryDayLabelEl = document.getElementById("mystery-day-label");
+        mysteryDayTextEl = document.getElementById("mystery-day-text");
+
+        // TTS Elements
+        ttsToggleBtn = document.getElementById("tts-toggle-btn");
+        ttsIconOn = document.getElementById("tts-icon-on");
+        ttsIconOff = document.getElementById("tts-icon-off");
+        ttsTextEl = document.getElementById("tts-text");
+        speechSpeedSlider = document.getElementById("speech-speed");
+        speechSpeedLabel = document.getElementById("speech-speed-label");
+        speechSpeedValue = document.getElementById("speech-speed-value");
+
+        // Add event listeners
+        langToggleBtn.addEventListener("click", toggleLanguage);
+        playPauseBtn.addEventListener("click", togglePlayPause);
+        prevBtn.addEventListener("click", prevStep);
+        nextBtn.addEventListener("click", nextStep);
+        resetBtn.addEventListener("click", resetRosary);
+
+        ttsToggleBtn.addEventListener("click", toggleTTS);
+        speechSpeedSlider.addEventListener("input", handleSpeedChange);
+
+        // Load initial data
+        loadTodayMystery();
+        generatePrayerSteps();
+        updateUI();
+        updateControlsState();
+      }
+
+      function loadTodayMystery() {
+        const day = new Date().getDay();
+        let mysteryTypeKey = "Glorious"; // Default key
+        if (day === 1 || day === 6) mysteryTypeKey = "Joyful";
+        if (day === 2 || day === 5) mysteryTypeKey = "Sorrowful";
+        if (day === 3 || day === 0) mysteryTypeKey = "Glorious"; // Sunday is 0
+        if (day === 4) mysteryTypeKey = "Luminous";
+
+        const mysteryTypeMap = {
+          en: {
+            Joyful: "Joyful",
+            Sorrowful: "Sorrowful",
+            Glorious: "Glorious",
+            Luminous: "Luminous",
+          },
+          es: {
+            Joyful: "Gozosos",
+            Sorrowful: "Dolorosos",
+            Glorious: "Gloriosos",
+            Luminous: "Luminosos",
+          },
+        };
+
+        mysteryDayTextEl.textContent =
+          mysteryTypeMap[currentLang][mysteryTypeKey];
+      }
+
+      function generatePrayerSteps() {
+        const p = PRAYERS[currentLang];
+        const day = new Date().getDay();
+        let mysteryKey = "Glorious";
+        if (day === 1 || day === 6) mysteryKey = "Joyful";
+        if (day === 2 || day === 5) mysteryKey = "Sorrowful";
+        if (day === 3 || day === 0) mysteryKey = "Glorious";
+        if (day === 4) mysteryKey = "Luminous";
+
+        const mysteries = MYSTERIES[currentLang][mysteryKey];
+
+        prayerSteps = [];
+
+        // 1. Sign of the Cross
+        prayerSteps.push({
+          title: p.signOfCrossTitle,
+          text: p.signOfCross,
+          count: null,
+        });
+
+        // 2. Apostles' Creed
+        prayerSteps.push({
+          title: p.apostlesCreedTitle,
+          text: p.apostlesCreed,
+          count: null,
+        });
+
+        // 3. Our Father (Intro)
+        prayerSteps.push({
+          title: p.ourFatherTitle,
+          text: p.ourFather,
+          count: null,
+        });
+
+        // 4. 3x Hail Mary (Intro)
+        for (let i = 0; i < 3; i++) {
+          prayerSteps.push({
+            title: p.hailMaryTitle,
+            text: p.hailMary,
+            count: `${i + 1}/3`,
+          });
+        }
+
+        // 5. Glory Be (Intro)
+        prayerSteps.push({
+          title: p.gloryBeTitle,
+          text: p.gloryBe,
+          count: null,
+        });
+
+        // 6. Decades (5x)
+        for (let i = 0; i < 5; i++) {
+          // Announce Mystery
+          prayerSteps.push({
+            title: `${p.mysteryAnnouncementTitle} ${i + 1}`,
+            text: mysteries[i],
+            count: null,
+          });
+          // Our Father
+          prayerSteps.push({
+            title: p.ourFatherMysteryTitle,
+            text: p.ourFather,
+            count: null,
+          });
+          // 10x Hail Mary
+          for (let j = 0; j < 10; j++) {
+            prayerSteps.push({
+              title: p.hailMaryMysteryTitle,
+              text: p.hailMary,
+              count: `${j + 1}/10`,
+            });
+          }
+          // Glory Be
+          prayerSteps.push({
+            title: p.gloryBeMysteryTitle,
+            text: p.gloryBe,
+            count: null,
+          });
+          // Fatima Prayer
+          prayerSteps.push({
+            title: p.fatimaPrayerTitle,
+            text: p.fatimaPrayer,
+            count: null,
+          });
+        }
+
+        // 7. Hail Holy Queen
+        prayerSteps.push({
+          title: p.hailHolyQueenTitle,
+          text: p.hailHolyQueen,
+          count: null,
+        });
+
+        // 8. Concluding Prayer
+        prayerSteps.push({
+          title: p.rosaryPrayerTitle,
+          text: p.rosaryPrayer,
+          count: null,
+        });
+
+        // 9. Final Sign of the Cross
+        prayerSteps.push({
+          title: p.signOfCrossTitle,
+          text: p.signOfCross,
+          count: null,
+        });
+
+        // 10. End
+        prayerSteps.push({ title: p.endTitle, text: p.endText, count: null });
+      }
+
+      // --- UI & STATE UPDATES ---
+
+      function updateUI() {
+        const p = PRAYERS[currentLang];
+
+        // Update static text
+        headerTitleEl.textContent = p.headerTitle;
+        mysteryDayLabelEl.textContent = p.mysteryDayLabel;
+        langToggleBtn.textContent = p.langBtn;
+        prevTextEl.textContent = p.prevBtn;
+        nextTextEl.textContent = p.nextBtn;
+        resetTextEl.textContent = p.resetBtn;
+        ttsTextEl.textContent = isTtsEnabled ? p.ttsBtnOn : p.ttsBtnOff;
+        speechSpeedLabel.textContent = p.speedLabel;
+
+        // Update TTS Icon
+        if (isTtsEnabled) {
+          ttsIconOn.classList.remove("hidden");
+          ttsIconOff.classList.add("hidden");
+        } else {
+          ttsIconOn.classList.add("hidden");
+          ttsIconOff.classList.remove("hidden");
+        }
+
+        // Update play/pause button text
+        playPauseText.textContent = isPlaying ? p.pauseBtn : p.playBtn;
+
+        // Update prayer text
+        let currentStep;
+        if (currentStepIndex === 0 && !isPlaying && prayerSteps.length > 0) {
+          // Show welcome message
+          currentStep = {
+            title: p.welcomeTitle,
+            text: p.welcomeText,
+            count: null,
+          };
+        } else {
+          currentStep = prayerSteps[currentStepIndex];
+        }
+
+        if (currentStep) {
+          prayerTitleEl.textContent = currentStep.title;
+          prayerTextEl.textContent = currentStep.text;
+
+          // Update prayer count
+          if (currentStep.count) {
+            prayerCountEl.textContent = currentStep.count;
+            prayerCountEl.classList.remove("hidden");
+          } else {
+            prayerCountEl.classList.add("hidden");
+          }
+        }
+
+        // Reset scroll
+        prayerTextContainer.scrollTop = 0;
+      }
+
+      function updateControlsState() {
+        prevBtn.disabled = currentStepIndex === 0;
+        nextBtn.disabled = currentStepIndex >= prayerSteps.length - 1;
+        playPauseBtn.disabled = currentStepIndex >= prayerSteps.length - 1;
+      }
+
+      function toggleLanguage() {
+        currentLang = currentLang === "en" ? "es" : "en";
+        stopAll();
+        resetRosary(); // This will regenerate steps and update UI
+        loadTodayMystery(); // Reload mystery in new language
+      }
+
+      // --- PLAYBACK & NAVIGATION ---
+
+      function togglePlayPause() {
+        if (currentStepIndex >= prayerSteps.length - 1) return; // Don't play if at the end
+
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+          startPlayback();
+        } else {
+          stopPlayback();
+        }
+        updatePlayPauseIcon();
+        updateUI();
+      }
+
+      function startPlayback() {
+        clearTimers();
+
+        // If TTS is on, it will handle advancing
+        if (isTtsEnabled) {
+          speakCurrentStep();
+        } else {
+          // If TTS is off, use timer-based scrolling
+          startScrolling();
+        }
+      }
+
+      function stopPlayback() {
+        clearTimers();
+        if (isTtsEnabled) {
+          synth.cancel();
+        }
+      }
+
+      function stopAll() {
+        isPlaying = false;
+        stopPlayback();
+        updatePlayPauseIcon();
+        updateUI();
+      }
+
+      function nextStep() {
+        stopAll();
+        if (currentStepIndex < prayerSteps.length - 1) {
+          currentStepIndex++;
+          updateUI();
+          updateControlsState();
+        }
+      }
+
+      function prevStep() {
+        stopAll();
+        if (currentStepIndex > 0) {
+          currentStepIndex--;
+          updateUI();
+          updateControlsState();
+        }
+      }
+
+      function resetRosary() {
+        stopAll();
+        currentStepIndex = 0;
+        generatePrayerSteps();
+        updateUI();
+        updateControlsState();
+      }
+
+      function updatePlayPauseIcon() {
+        if (isPlaying) {
+          playIcon.classList.add("hidden");
+          pauseIcon.classList.remove("hidden");
+        } else {
+          playIcon.classList.remove("hidden");
+          pauseIcon.classList.add("hidden");
+        }
+      }
+
+      function clearTimers() {
+        if (scrollTimer) {
+          clearInterval(scrollTimer);
+          scrollTimer = null;
+        }
+        if (autoAdvanceTimer) {
+          clearTimeout(autoAdvanceTimer);
+          autoAdvanceTimer = null;
+        }
+      }
+
+      // --- SCROLLING & AUTO-ADVANCE ---
+
+      function startScrolling() {
+        clearTimers();
+        prayerTextContainer.scrollTop = 0;
+        const maxScroll =
+          prayerTextContainer.scrollHeight - prayerTextContainer.clientHeight;
+
+        if (maxScroll <= 0) {
+          // No scrolling needed, just auto-advance
+          autoAdvanceTimer = setTimeout(autoAdvance, AUTO_ADVANCE_DELAY);
+          return;
+        }
+
+        scrollTimer = setInterval(() => {
+          if (!isPlaying) {
+            clearTimers();
+            return;
+          }
+
+          prayerTextContainer.scrollTop += SCROLL_SPEED;
+
+          if (prayerTextContainer.scrollTop >= maxScroll) {
+            clearInterval(scrollTimer);
+            scrollTimer = null;
+            // Auto-advance after a delay
+            autoAdvanceTimer = setTimeout(autoAdvance, AUTO_ADVANCE_DELAY);
+          }
+        }, SCROLL_INTERVAL);
+      }
+
+      function autoAdvance() {
+        if (!isPlaying) return;
+
+        if (currentStepIndex < prayerSteps.length - 1) {
+          currentStepIndex++;
+          updateUI();
+          updateControlsState();
+
+          if (currentStepIndex >= prayerSteps.length - 1) {
+            // Reached the end
+            stopAll();
+          } else {
+            // Start next step
+            startPlayback();
+          }
+        } else {
+          // Reached the end
+          stopAll();
+        }
+      }
+
+      // --- TEXT-TO-SPEECH (TTS) ---
+
+      function toggleTTS() {
+        isTtsEnabled = !isTtsEnabled;
+        updateUI();
+
+        if (isTtsEnabled) {
+          // ttsIconOn.classList.remove('hidden'); // Logic moved to updateUI
+          // ttsIconOff.classList.add('hidden'); // Logic moved to updateUI
+          // Warm up the TTS engine
+          synth.cancel();
+        } else {
+          // ttsIconOn.classList.add('hidden'); // Logic moved to updateUI
+          // ttsIconOff.classList.remove('hidden'); // Logic moved to updateUI
+          // Stop any playing speech
+          synth.cancel();
+        }
+
+        // If playing, restart the current step with the new TTS setting
+        if (isPlaying) {
+          stopPlayback();
+          startPlayback();
+        }
+      }
+
+      function handleSpeedChange(e) {
+        speechSpeed = parseFloat(e.target.value);
+        speechSpeedValue.textContent = `${speechSpeed.toFixed(1)}x`;
+
+        // If currently speaking, stop and restart with new speed
+        if (isPlaying && isTtsEnabled && synth.speaking) {
+          const currentText = prayerSteps[currentStepIndex].text;
+          synth.cancel();
+          speak(currentText);
+        }
+      }
+
+      function speakCurrentStep() {
+        if (!isTtsEnabled || !isPlaying) return;
+
+        const currentStep = prayerSteps[currentStepIndex];
+        if (!currentStep) return;
+
+        const textToSpeak = currentStep.text;
+        speak(textToSpeak);
+      }
+
+      function speak(text) {
+        if (!isTtsEnabled) return;
+
+        // Cancel any previous speech
+        synth.cancel();
+
+        currentUtterance = new SpeechSynthesisUtterance(text);
+        currentUtterance.lang = currentLang === "es" ? "es-ES" : "en-US";
+        currentUtterance.rate = speechSpeed;
+
+        currentUtterance.onend = () => {
+          // Speech finished, wait 1 second then auto-advance
+          if (isPlaying) {
+            setTimeout(autoAdvance, 1000); // 1000ms = 1 second
+          }
+        };
+
+        currentUtterance.onerror = (event) => {
+          // Ignore "interrupted" errors which are common
+          if (event.error !== "interrupted") {
+            console.error("Speech synthesis error:", event.error);
+          }
+        };
+
+        // Ensure voices are loaded
+        let voices = synth.getVoices();
+        if (voices.length === 0) {
+          synth.onvoiceschanged = () => {
+            voices = synth.getVoices();
+            const voice = findVoice(voices, currentUtterance.lang);
+            if (voice) currentUtterance.voice = voice;
+            synth.speak(currentUtterance);
+          };
+        } else {
+          const voice = findVoice(voices, currentUtterance.lang);
+          if (voice) currentUtterance.voice = voice;
+          synth.speak(currentUtterance);
+        }
+      }
+
+      function findVoice(voices, lang) {
+        // Try to find an exact match first
+        let voice = voices.find((v) => v.lang === lang);
+        if (voice) return voice;
+
+        // Try to find a partial match (e.g., 'en-US' matches 'en')
+        const langBase = lang.split("-")[0];
+        voice = voices.find((v) => v.lang.startsWith(langBase));
+        if (voice) return voice;
+
+        return null; // Use default
+      }
+
+      // --- STARTUP ---
+      // Ensure DOM is ready before initializing
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initApp);
+      } else {
+        initApp();
+      }
+    </script>
+  </body>
+</html>
